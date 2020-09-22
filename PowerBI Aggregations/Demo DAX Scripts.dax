@@ -1,0 +1,62 @@
+﻿-- 1. Table scan
+EVALUATE VALUES ( dimension_City[Sales Territory])
+
+
+
+
+-- 2. Is our Agg table works?
+
+EVALUATE SUMMARIZECOLUMNS ( dimension_City[Sales Territory],
+                           "Quantity", 
+                           SUM( fact_Sale[Quantity]) )
+                           
+
+EVALUATE SUMMARIZECOLUMNS ( dimension_City[City],
+                           "Quantity", 
+                           SUM( fact_Sale[Quantity]) )
+                           
+EVALUATE SUMMARIZECOLUMNS ( dimension_City[Region],
+                           "Quantity", 
+                           SUM( fact_Sale[Quantity]) )
+                           
+
+EVALUATE SUMMARIZECOLUMNS ( dimension_City[City], dimension_Customer[Buying Group],
+                           "Quantity", 
+                           SUM( fact_Sale[Quantity]) )
+      
+
+-- 3. Is our Relationship based Agg works?
+EVALUATE SUMMARIZECOLUMNS ( dimension_City[City Key],
+                           "Quantity", 
+                           SUM( fact_Sale[Quantity]) )
+
+
+EVALUATE SUMMARIZECOLUMNS ( fact_Sale[City Key],
+                           "Quantity", 
+                           SUM( fact_Sale[Quantity]) )
+           
+
+-- 4. Check relationship works
+EVALUATE SUMMARIZECOLUMNS ( dimension_City[Region],
+                           "Quantity", 
+                           SUM( fact_Sale[Quantity]) )
+           
+
+-- 5. Check all relationship works
+EVALUATE SUMMARIZECOLUMNS ( dimension_City[Region],dimension_Customer[Buying Group],
+                           "Quantity", 
+                           SUM( fact_Sale[Quantity]) )
+           
+           
+-- 6. Distinct Count
+EVALUATE SUMMARIZECOLUMNS ( dimension_Customer[Buying Group],
+                           "Customer Count", 
+                           DISTINCTCOUNT( fact_Sale[Customer Key] ) )
+
+
+-- Storage Mode
+
+-- 7. Precedence
+EVALUATE SUMMARIZECOLUMNS ( dimension_Date[Calendar Year],
+                           "Quantity", 
+                           SUM( fact_Sale[Quantity]) )

@@ -1,5 +1,2 @@
-# Register Repo
-Register-PSRepository -Name PSGalleryInt -SourceLocation https://www.poshtestgallery.com/ -InstallationPolicy Trusted
-
-# Install Teams Module
-Install-Module -Name MicrosoftTeams -Repository PSGalleryInt -Force
+# Install Teams Module more info here  https://docs.microsoft.com/en-us/microsoftteams/teams-powershell-install
+Install-Module -Name MicrosoftTeams -Force -AllowClobber

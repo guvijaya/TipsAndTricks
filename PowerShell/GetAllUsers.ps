@@ -1,0 +1,59 @@
+# Install-Module AzureAD
+# Connect-AzureAD
+
+# Function to recursively get all direct reports under a manager
+function Get-OrgHierarchy {
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]$ManagerObjectId  # Object ID of the GM
+    )
+
+    # List to store all subordinates
+    $allEmployees = @()
+
+    # Get direct reports for the given manager
+    $directReports = Get-AzureADUserDirectReport -ObjectId $ManagerObjectId
+
+    # Add direct reports to the list
+    foreach ($report in $directReports) {
+        # Get more details about each report (like JobTitle, UsageLocation)
+        $employeeDetails = Get-AzureADUser -ObjectId $report.ObjectId
+
+        # Create a custom object to store relevant data
+        $employee = [PSCustomObject]@{
+            JobTitle                     = $employeeDetails.JobTitle
+            UsageLocation                = $employeeDetails.UsageLocation
+            PhysicalDeliveryOfficeName    = $employeeDetails.PhysicalDeliveryOfficeName
+            Mail                         = $employeeDetails.Mail
+            GivenName                    = $employeeDetails.GivenName
+            MailNickName                 = $employeeDetails.MailNickName
+        }
+
+        # Add the employee to the list
+        $allEmployees += $employee
+
+        # Recursively find employees under each direct report
+        $allEmployees += Get-OrgHierarchy -ManagerObjectId $report.ObjectId
+    }
+
+    return $allEmployees
+}
+
+# Replace these with the Object IDs of the two GMs
+$GM1ObjectId = "kshamtaj@microsoft.com"
+$GM2ObjectId = "rishigi@microsoft.com"
+
+# Get all employees under GM1
+$allEmployeesGM1 = Get-OrgHierarchy -ManagerObjectId $GM1ObjectId
+
+# Get all employees under GM2
+$allEmployeesGM2 = Get-OrgHierarchy -ManagerObjectId $GM2ObjectId
+
+# Combine the employee lists
+$allEmployees = $allEmployeesGM1 + $allEmployeesGM2
+
+# Export the result to a CSV file
+$allEmployees | Export-Csv -Path "C:\Temp\GMHierarchy.csv" -NoTypeInformation
+
+# Output the path of the generated CSV
+Write-Host "CSV exported to C:\Temp\GMHierarchy.csv"

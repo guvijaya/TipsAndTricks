@@ -1,6 +1,6 @@
 const celebrationData = {
   "birthdays": [
-        {"name": "Rama", "date": "26-Mar"}
+        {"name": "Rama", "date": "26-Mar"},
         {"name": "Krishna", "date": "4-Sep"}
 ],
   "weddings": [    

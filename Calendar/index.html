@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Calendar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #fdf2f8;
+            --birthday-color: #ff6b6b;
+            --wedding-color: #8e44ad;
+            --accent: #4ecdc4;
+            --text-color: #333;
+            --shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 15px;
+        }
+
+        /* --- NEW: UPCOMING / CLICKED DISPLAY --- */
+        .info-header {
+            max-width: 1600px;
+            margin: 0 auto 20px auto;
+            display: grid;
+            gap: 15px;
+            grid-template-columns: 1fr;
+        }
+
+        @media (min-width: 768px) {
+            .info-header { grid-template-columns: 1fr 1fr; }
+        }
+
+        .info-card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            border-bottom: 4px solid var(--accent);
+        }
+
+        .info-card h3 { font-family: 'Fredoka', sans-serif; font-size: 0.9rem; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+        .info-card .content { font-weight: 700; font-size: 1.2rem; color: var(--text-color); }
+        .info-card.active { border-color: var(--birthday-color); animation: pulse 2s infinite; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        /* --- LAYOUT --- */
+        .main-wrapper {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 1100px) {
+            .main-wrapper { grid-template-columns: 3fr 1.2fr; align-items: start; }
+        }
+
+        .calendar-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 15px;
+        }
+
+        .month-card {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: var(--shadow);
+            border-top: 4px solid var(--accent);
+        }
+
+        .month-name { text-align: center; font-family: 'Fredoka', sans-serif; color: var(--accent); margin-bottom: 8px; font-size: 1.1rem; }
+        .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+        .day-label { font-size: 0.7rem; font-weight: bold; color: #ccc; padding-bottom: 4px; }
+
+        .date-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .date-cell:active { transform: scale(0.9); }
+
+        .has-event { color: white; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .type-birthday { background: var(--birthday-color); }
+        .type-wedding { background: var(--wedding-color); }
+        .type-mixed { background: linear-gradient(135deg, var(--birthday-color) 50%, var(--wedding-color) 50%); }
+
+        .sidebar-tags {
+            background: rgba(255, 255, 255, 0.6);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px dashed var(--accent);
+        }
+
+        .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+
+        .event-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .tag-bd { background-color: var(--birthday-color); }
+        .tag-wd { background-color: var(--wedding-color); }
+        /* Make the header area stick to the top */
+        .info-header {
+            position: -webkit-sticky; /* For Safari */
+            position: sticky;
+            top: 0;
+            z-index: 1000; /* Ensures it stays above the calendar cards */
+            background-color: var(--bg-color); /* Matches body background to hide content scrolling behind */
+            padding-top: 10px;
+            padding-bottom: 15px;
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            gap: 15px;
+            grid-template-columns: 1fr;
+        }
+
+        /* Optional: Add a subtle shadow when scrolling to separate it from the content */
+        .info-header.scrolled {
+            box-shadow: 0 10px 15px -10px rgba(0,0,0,0.1);
+        }
+
+        @media (min-width: 768px) {
+            .info-header { grid-template-columns: 1fr 1fr; }
+        }
+
+            
+    /* Balloon base */
+    .balloon {
+        position: absolute;
+        bottom: -160px;
+        width: 70px;
+        height: 90px;
+        border-radius: 50%;
+        animation: floatUp linear infinite;
+        filter: drop-shadow(0 10px 10px rgba(0,0,0,0.15));
+    }
+    
+    /* Highlight for 3D effect */
+    .balloon::before {
+        content: "";
+        position: absolute;
+        top: 15%;
+        left: 20%;
+        width: 25%;
+        height: 35%;
+        background: rgba(255,255,255,0.45);
+        border-radius: 50%;
+    }
+    
+    /* Knot */
+    .balloon::after {
+        content: "";
+        position: absolute;
+        bottom: -6px;
+        left: 50%;
+        width: 10px;
+        height: 8px;
+        background: inherit;
+        transform: translateX(-50%) rotate(45deg);
+        border-radius: 2px;
+    }
+    
+    @keyframes floatUp {
+        from {
+            transform: translateY(0) translateX(0);
+        }
+        to {
+            transform: translateY(-130vh) translateX(40px);
+        }
+    }
+    </style>
+</head>
+<body>
+
+    <div class="info-header">
+        <div class="info-card active" id="nextEventCard">
+            <h3>🌟 Coming Up Next</h3>
+            <div class="content" id="nextEventText">Loading...</div>
+        </div>
+        <div class="info-card" id="selectedEventCard">
+            <h3>📅 Selected Celebration</h3>
+            <div class="content" id="selectedEventText">Tap a colored date</div>
+        </div>
+    </div>
+
+    <div class="main-wrapper">
+        <div id="calendar" class="calendar-section"></div>
+        <div class="sidebar-tags">
+            <div id="tagCloud" class="tag-cloud"></div>
+        </div>
+    </div>
+    <script src="data.js"></script>
+
+<script>
+    // 1. Initialize Constants First
+    const monthMap = {"Jan":0, "Feb":1, "Mar":2, "Apr":3, "May":4, "Jun":5, "Jul":6, "Aug":7, "Sep":8, "Oct":9, "Nov":10, "Dec":11};
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const eventLookup = {};
+    const allEvents = [];
+
+    // 2. Define the processing function
+    function process(list, type) {
+        list.forEach(ev => {
+            const [d, m] = ev.date.split('-');
+            const mIdx = monthMap[m];
+            const dayNum = parseInt(d);
+            const key = `${mIdx}-${dayNum}`;
+            
+            if(!eventLookup[key]) eventLookup[key] = {bds:[], wds:[]};
+            if(type==='bd') eventLookup[key].bds.push(ev.name); 
+            else eventLookup[key].wds.push(ev.name);
+            
+            allEvents.push({...ev, mIdx, d: dayNum, type});
+        });
+    }
+
+    // 3. Main Initialization Function
+    function init() {
+        // Use data from data.js
+        process(celebrationData.birthdays, 'bd');
+        process(celebrationData.weddings, 'wd');
+        
+        allEvents.sort((a,b) => a.mIdx - b.mIdx || a.d - b.d);
+
+        renderCalendar();
+        renderTagCloud();
+        setUpcoming();
+    }
+
+    function renderCalendar() {
+        const calDiv = document.getElementById('calendar');
+        months.forEach((mName, mIdx) => {
+            const card = document.createElement('div');
+            card.className = 'month-card';
+            card.innerHTML = `<div class="month-name">${mName}</div><div class="days-grid"></div>`;
+            const grid = card.querySelector('.days-grid');
+            
+            ['S','M','T','W','T','F','S'].forEach(day => grid.innerHTML += `<div class="day-label">${day}</div>`);
+            
+            const first = new Date(2026, mIdx, 1).getDay();
+            const daysCount = new Date(2026, mIdx+1, 0).getDate();
+            
+            for(let i=0; i<first; i++) grid.innerHTML += '<div></div>';
+            
+            for(let day=1; day<=daysCount; day++) {
+                const key = `${mIdx}-${day}`;
+                let cls = 'date-cell';
+                let namesAttr = "";
+                if(eventLookup[key]) {
+                    const e = eventLookup[key];
+                    cls += ' has-event ' + (e.bds.length && e.wds.length ? 'type-mixed' : e.bds.length ? 'type-birthday' : 'type-wedding');
+                    namesAttr = `data-names="${[...e.bds.map(n=>'🎂 '+n), ...e.wds.map(n=>'💍 '+n)].join(', ')}"`;
+                }
+                grid.innerHTML += `<div class="${cls}" ${namesAttr} onclick="showEvent(this)">${day}</div>`;
+            }
+            calDiv.appendChild(card);
+        });
+    }
+
+    function renderTagCloud() {
+        const tagDiv = document.getElementById('tagCloud');
+        allEvents.forEach(ev => {
+            tagDiv.innerHTML += `<div class="event-tag ${ev.type==='bd'?'tag-bd':'tag-wd'}"><span>${ev.date} ${ev.name} ${ev.type==='bd'?'🎂':'💍'} </span></div>`;
+        });
+    }
+
+    function getEventDetails(mIdx, day) {
+        const eventDate = new Date(2026, mIdx, day); // Using 2026 as the reference year
+        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const dayOfWeek = dayNames[eventDate.getDay()];
+        const suffix = getDaySuffix(day);
+        const monthName = months[mIdx].substring(0, 3);
+        
+        return `${dayOfWeek}, ${day}${suffix} ${monthName}`;
+    }
+    
+    
+    window.showEvent = function(el) {
+        const names = el.getAttribute('data-names');
+        if(names) {
+            // Get the date from the cell's own text and the month from the parent card
+            const day = parseInt(el.innerText);
+            const monthName = el.closest('.month-card').querySelector('.month-name').innerText;
+            const mIdx = months.indexOf(monthName);
+            
+            const dateDetails = getEventDetails(mIdx, day);
+            
+            document.getElementById('selectedEventText').innerHTML = `
+                <div style="color: var(--birthday-color);">${names}</div>
+                <div style="font-size: 0.9rem; font-weight: normal; color: #666; margin-top: 4px;">
+                    ${dateDetails}
+                </div>
+            `;
+            
+            // Add a small highlight effect to the card
+            document.getElementById('selectedEventCard').style.borderColor = "var(--birthday-color)";
+        }
+    };
+    
+    window.addEventListener('scroll', () => {
+        const header = document.querySelector('.info-header');
+        if (window.scrollY > 10) {
+            header.classList.add('scrolled');
+        } else {
+            header.classList.remove('scrolled');
+        }
+    });
+    
+        // Helper to get date suffix (st, nd, rd, th)
+    function getDaySuffix(day) {
+        if (day > 3 && day < 21) return 'th';
+        switch (day % 10) {
+            case 1:  return "st";
+            case 2:  return "nd";
+            case 3:  return "rd";
+            default: return "th";
+        }
+    }
+    
+    function setUpcoming() {
+        const now = new Date();
+        // Set time to midnight for accurate day-to-day calculation
+        now.setHours(0, 0, 0, 0);
+        
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+        const currentDate = now.getDate();
+        
+        // Find the next event
+        let next = allEvents.find(e => e.mIdx > currentMonth || (e.mIdx === currentMonth && e.d >= currentDate));
+        
+        // If no events left this year, pick the first one of next year
+        let eventYear = next ? currentYear : currentYear + 1;
+        if (!next) next = allEvents[0];
+    
+        // Create a Date object for the event to find the Day of Week and calculate difference
+        const eventDate = new Date(eventYear, next.mIdx, next.d);
+        
+        // Calculate Days to go
+        const timeDiff = eventDate.getTime() - now.getTime();
+        const daysToGo = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        
+        // Format Day of Week and Suffix
+        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const dayOfWeek = dayNames[eventDate.getDay()];
+        const suffix = getDaySuffix(next.d);
+    
+        // Update the UI
+        const countdownText = daysToGo === 0 ? "Today!" : `${daysToGo} days to go.`;
+        
+        document.getElementById('nextEventText').innerHTML = `
+            <div style="margin-bottom: 5px;">${next.name} ${next.type==='bd'?'birthday':'Anniversary'} on ${dayOfWeek} ${next.d} <sup>${suffix}</sup> ${months[next.mIdx].substring(0,3)}</div>
+            <div style="font-size: 0.9rem; font-weight: normal; color: #666;">
+                <strong>${countdownText}</strong>
+            </div>
+        `;
+    }
+    
+    const gradients = [
+        "radial-gradient(circle at 30% 30%, #ffffff80, #ff5f6d 60%)",
+        "radial-gradient(circle at 30% 30%, #ffffff80, #ffc371 60%)",
+        "radial-gradient(circle at 30% 30%, #ffffff80, #36d1dc 60%)",
+        "radial-gradient(circle at 30% 30%, #ffffff80, #84fab0 60%)",
+        "radial-gradient(circle at 30% 30%, #ffffff80, #c471ed 60%)"
+    ];
+    
+    for (let i = 0; i < 5; i++) {
+        const b = document.createElement("div");
+        b.className = "balloon";
+        b.style.left = Math.random() * 100 + "vw";
+        b.style.background = gradients[Math.floor(Math.random() * gradients.length)];
+        b.style.animationDuration = 10 + Math.random() * 12 + "s";
+        b.style.animationDelay = Math.random() * 6 + "s";
+        b.style.transform = "scale(" + (0.7 + Math.random() * 0.6) + ")";
+        document.body.appendChild(b);
+    }
+
+    // Run everything
+    init();
+</script>
+</body>
+</html>
